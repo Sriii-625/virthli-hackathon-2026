@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    #mapHolder {
+         width: 400px;           /* Sets the width */
+        height: 400px;          /* Sets the height */
+         background-color: grey; /* Adds a color */
+         border: 5px solid black;  /* Adds a visible outline */
+        padding: 20px;          /* Adds space inside the box */
+        margin: 10px;           /* Adds space outside the box */
+        color: white;           /* Sets text color inside the box */
+    }
+</style>
+<body>
+    <button onclick="geolocation();">Get Coordinates</button>
+    <button onclick="zoomToLocation();">Zoom to Location</button>
+    <input type="password" id="API_KEY" placeholder="Enter API Key">
+    <button onclick="updateAPIKey();">Update API Key</button>
+    <div id="mapHolder" style="height: 400px; width: 400px; display: block;"></div>
+    <div id="map" style="height: 400px; width: 400px;"></div>
+    <script src="location_and_zoom4.js"></script>
+</body>
+</html>

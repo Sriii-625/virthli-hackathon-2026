@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+
+<html>
+<body>
+
+<!--The "container" is the section for the drop-down menu. -->
+<div id="container">
+    <button id="menuBtn">Add</button>
+
+    <!--This following section contains the buttons for the drop-down menu. It is hidden by default and only appears when the "Add" button is clicked.-->
+    <div id="dropDown" style="display:none">
+        <button id="uploadBtn">Upload</button>
+        <br><br>
+        <button id="captureBtn">Capture</button>
+    </div>
+
+    <!--The following section contains the button to capture the photo, and it is visible only when the "Capture" button is clicked.-->
+    <div id="captureItContainer" style = "display: none">
+        <button id="captureIt">Take Photo</button>
+    </div>
+
+    <!--The following section contains the hidden input for uploading an image, the video element for displaying the webcam feed,
+    the canvas for capturing the photo, and an img element for displaying the captured photo. The canvas and img elements 
+    are hidden by default and only appear when needed.-->
+
+    <input type="file" id="fileInput" accept="image/*" style="display: none">
+    <video id="video" autoplay playsinline style="display: none"></video>
+    <canvas id="canvas" style="display: none"></canvas>
+    <img src="" id ="img" style="display: none">
+</div>
+
+<script>
+    //Assigning variables to the elements in the HTML document.
+
+    const fileInput = document.getElementById('fileInput');
+    const container = document.getElementById('container');
+    const menuBtn = document.getElementById('menuBtn');
+    const dropDown = document.getElementById('dropDown');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    //The following 6 are for the camera functionality.
+    const video = document.getElementById('video');
+    const captureBtn = document.getElementById('captureBtn');
+    const canvas = document.getElementById('canvas');
+    const img = document.getElementById('img');
+    const captureItContainer = document.getElementById('captureItContainer');
+    const captureIt = document.getElementById('captureIt');
+
+    //The following event listener "displays" the choices of the menu button when
+    //clicking the button with 'menuBtn'
+    menuBtn.addEventListener('click', () => {
+        if (dropDown.style.display === 'none'){
+            dropDown.style.display = 'block';
+        }
+        else
+        {
+            dropDown.style.display = 'none';
+        }
+    });
+
+    //The following prompts image upload from the storage when clicking the button with
+    //the ID "uploadBtn"; the drop-down menu is hid after.
+    uploadBtn.addEventListener('click', () => {
+        fileInput.click();
+        dropDown.style.display = 'none';
+    });
+
+    //The following event listener listens for a change in the file input (i.e., when a file is selected). When a file is selected, 
+    // it calls the processUploadedImage function with the selected file as an argument. After processing the image, 
+    // it resets the value of the file input to allow for uploading the same file again if needed.
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            processUploadedImage(e.target.files[0]);
+            // Reset the value so the same file can be uploaded again if needed
+            e.target.value = ''; 
+        }
+    });
+
+    //The following function is a placeholder for the logic to process the uploaded image. 
+    // It takes a file as an argument, and the actual image processing logic should be implemented within this function.
+    function processUploadedImage(file) {
+        // Hide camera UI when showing the uploaded image
+        video.style.display = 'none';
+        canvas.style.display = 'none';
+        captureItContainer.style.display = 'none';
+
+        // Show uploaded image preview
+        img.style.display = 'block';
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+
+        const objectUrl = URL.createObjectURL(file);
+        img.src = objectUrl;
+
+        // Clean up memory after the image loads
+        img.onload = () => URL.revokeObjectURL(objectUrl);
+    };
+
+    //CAPTURED IMAGE SECTION
+    //The following function is responsible for starting the webcam feed when the "Capture" button is clicked.
+    //  It hides the main container, shows the video feed and capture button, and attempts to access the user's webcam using the getUserMedia API.
+    //  If successful, it displays the webcam feed in the video element; if there's an error (e.g., permission denied), it logs the error and alerts the user.
+    async function startCam() {
+        img.style.display = 'none';
+        video.style.display = 'block';
+        captureItContainer.style.display = 'block';
+        dropDown.style.display = 'none';
+        menuBtn.style.display = 'none';
+
+        //Try to get the environment (back) camera
+        const constraints = {
+            video: { 
+                facingMode: "environment",
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: false
+        };
+
+        try {
+            let stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+            video.play();
+        } catch (error) {
+            console.warn('Rear camera not found, falling back to default...', error);
+            
+            // Tier 2: Fallback for PC/Laptops with only one camera
+            try {
+                const fallbackConstraints = { video: true };
+                const fallbackStream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                video.srcObject = fallbackStream;
+                video.play();
+            } catch (fallbackError) {
+                console.error('No camera accessible:', fallbackError);
+                alert('Could not access any camera. Please check permissions.');
+                
+                // Reset UI if everything fails
+                video.style.display = 'none';
+                captureItContainer.style.display = 'none';
+                menuBtn.style.display = 'block';
+            }
+        }
+}
+
+    //The following event listener listens for a click on the "Capture" button 
+    // and calls the startCam function to initiate the webcam feed.
+    captureBtn.addEventListener('click', startCam)
+
+    //The following event listener listens for a click on the "Take Photo" button. When clicked, it captures the current frame from the video feed,
+    // draws it onto the canvas, converts the canvas content to a data URL (Base64 string), and sets this data URL as the source of the img element to display the captured photo.
+    // It then stops the webcam stream, hides the video element, and resets the UI to show the main menu again. Finally, it calls the processCapturedImage function with the captured image data URL for further processing.
+    captureIt.addEventListener('click', () => {
+        if (video.readyState === video.HAVE_ENOUGH_DATA){
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            img.src = canvas.toDataURL('image/png');
+            img.style.display = 'block';
+
+            const tracks = video.srcObject.getTracks();
+            tracks.forEach(track => track.stop());
+
+            video.style.display = 'none';
+            video.srcObject = null;
+            captureItContainer.style.display = 'none';
+            
+            container.style.display = 'block';
+            menuBtn.style.display = 'block'; 
+        
+            dropDown.style.display = 'none';
+            
+            processCapturedImage(img.src);
+
+            URL.revokeObjectURL(img.src); // Clean up memory
+        }
+
+    })
+
+    function processCapturedImage (file) {
+        // ***IMAGE PROCESSING LOGIC GOES HERE***
+    }
+</script>
+</body>
+</html>
